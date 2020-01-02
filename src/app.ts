@@ -1,8 +1,23 @@
+import glslangModule from '@webgpu/glslang/dist/web-devel/glslang.onefile';
+
 export class App {
 
     public canvas: HTMLCanvasElement;
 
     public context: GPUCanvasContext;
+
+    public adapter: GPUAdapter;
+
+    public device: GPUDevice;
+
+    public glslang: any;
+
+    public swapChain: GPUSwapChain;
+
+    public format: GPUTextureFormat = 'bgra8unorm';
+
+    public commandEncoder: GPUCommandEncoder;
+    
 
     public CreateCanvas( rootElement: HTMLElement ) {
 
@@ -17,26 +32,40 @@ export class App {
         this.canvas.height = height;
 
         this.canvas.style.width = '100%';
-
+        
         this.canvas.style.height = '100%';
 
         rootElement.appendChild( this.canvas );
 
     }
 
-    public InitWebGPU() {
+    public async InitWebGPU() {
+        console.log(navigator.gpu)
+        this.adapter = await navigator.gpu.requestAdapter( {
+
+            powerPreference: 'high-performance'
+
+        } );
+
+        this.glslang = await glslangModule();
+
+        this.device = await this.adapter.requestDevice();
+
+        // this.glslang = await glslangModule();
 
         this.context = <unknown>this.canvas.getContext( 'gpupresent' ) as GPUCanvasContext;
 
-        if ( this.context ) {
+        this.swapChain = this.context.configureSwapChain( {
 
-            console.info( `Congratulations! You've got a WebGPU context!` );
+            device: this.device,
 
-        } else {
+            format: this.format,
 
-            throw new Error( 'Your browser seems not support WebGPU!' );
+            usage: GPUTextureUsage.OUTPUT_ATTACHMENT | GPUTextureUsage.COPY_SRC,
 
-        }
+        } );
+
+        this.commandEncoder = this.device.createCommandEncoder();
 
     }
 
